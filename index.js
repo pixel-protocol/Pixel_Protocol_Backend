@@ -22,9 +22,9 @@ const io = new Server(server, {
     }
 });
 
-const N = 1000000
+const N = 3000000
 
-const arrayBuffer = new ArrayBuffer(N); // 1 MB
+const arrayBuffer = new ArrayBuffer(N); // 3 MB
 const arrayView = new Uint8Array(arrayBuffer);
 
 for (let i = 0; i < N; i++) {
@@ -35,6 +35,13 @@ const getOffset = (x, y) => {
     return y * 1000 + x
 }
 
+const DecToRGB = (dec) => {
+    const r = Math.floor(dec / (256 * 256));
+    const g = Math.floor(dec / 256) % 256;
+    const b = dec % 256;
+    return [r, g, b]
+}
+
 
 const mumbaiAPIKey = process.env.ALCHEMY_API_KEY_MUMBAI;
 const mumbaiProvider = new ethers.providers.AlchemyProvider("maticmum", mumbaiAPIKey);
@@ -42,31 +49,34 @@ const mumbaiProvider = new ethers.providers.AlchemyProvider("maticmum", mumbaiAP
 const contract = new ethers.Contract(contractAddress, contractABI, mumbaiProvider);
 
 
-contract.on("ColorChange", (_, x, y, newCode) => {
+contract.on("ColorChange", (_, ids, colors) => {
     const C = Number(newCode);
-    const X = x.toNumber()
-    const Y = y.toNumber()
-    const offset = getOffset(X, Y);
-    console.log("Color change!")
-    console.log(`(${x},${y}), ${C}`)
-    if (C !== arrayView[offset]) {
-        arrayView[offset] = C;
-
-        io.emit('pixelData', {
-            x: X,
-            y: Y,
-            code: C
-        });
+    const ids = ids.map(id=>id.toNumber())
+    const colors = colors.map(color => DecToRGB(color.toNumber()))
+    for(let i=0;i<ids.length;i++){
+        const id = ids[i]
+        const color = colors[i]
+        const [r,g,b] = color
+        const startIndex = id * 3
+        arrayView[startIndex] = r
+        arrayView[startIndex+1] = g
+        arrayView[startIndex+2] = b
     }
 
+    console.log("Color change!")
 
+
+    io.emit('colorChange',{
+        ids: ids,
+        colors: colors
+    })
 })
 
 
 io.on('connection', (socket) => {
-    socket.emit('canvasData', arrayView)
-    socket.on('requestCanvasData', () => {
-        socket.emit('canvasData', arrayView)
+    socket.emit('canvas', arrayView)
+    socket.on('requestCanvas', () => {
+        socket.emit('canvas', arrayView)
     })
 });
 
@@ -77,7 +87,7 @@ server.listen(port, hostname, () => {
 
 });
 
-const STEP = 25;
+const STEP = 100;
 var startIndex = 0;
 
 
@@ -97,21 +107,23 @@ setInterval(function () {
         if (values.length !== promises.length) {
             throw Error("Not all promises resolved.")
         }
-        for (let col = startIndex; col < 1000; col += STEP) {
+        for (let row=startIndex; row < 1000; row += STEP) {
 
             /*console.log("row start")
             console.log(values[Math.floor(col / STEP)])
             console.log("row end")*/
-            const rgbRow = values[Math.floor(col / STEP)].flatMap((hex) => Number(hex));
-            if (rgbRow.length !== 1000) {
+            const rgbRow = values[Math.floor(row / STEP)].flatMap(color => DecToRGB(color.toNumber()));
+            if (rgbRow.length !== 3000) {
                 throw Error("Invalid length of row returned.")
             }
-            for (let row = 0; row < 1000; row++) {
-                const offset = getOffset(col, row);
-                arrayView[offset] = rgbRow[row];
+
+            const s = row * 1000 * 3
+
+            for(let j=0;j<300;j++){
+                arrayView[s+j] = rgbRow[j]
             }
         }
-        io.emit('canvasData', arrayView);
+        io.emit('canvas', arrayView);
 
         startIndex = (startIndex + 1) % STEP
         //console.log(startIndex)
