@@ -119,7 +119,7 @@ setInterval(function () {
 
             const s = row * 1000 * 3
 
-            for(let j=0;j<300;j++){
+            for(let j=0;j<3000;j++){
                 arrayView[s+j] = rgbRow[j]
             }
         }
