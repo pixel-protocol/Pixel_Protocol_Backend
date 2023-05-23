@@ -49,10 +49,10 @@ const mumbaiProvider = new ethers.providers.AlchemyProvider("maticmum", mumbaiAP
 const contract = new ethers.Contract(contractAddress, contractABI, mumbaiProvider);
 
 
-contract.on("ColorChange", (_, ids, colors) => {
+contract.on("ColorChange", (_, pixelIds, pixelColors) => {
     const C = Number(newCode);
-    const ids = ids.map(id=>id.toNumber())
-    const colors = colors.map(color => DecToRGB(color.toNumber()))
+    const ids = pixelIds.map(id=>id.toNumber())
+    const colors = pixelColors.map(color => DecToRGB(color))
     for(let i=0;i<ids.length;i++){
         const id = ids[i]
         const color = colors[i]
@@ -112,7 +112,9 @@ setInterval(function () {
             /*console.log("row start")
             console.log(values[Math.floor(col / STEP)])
             console.log("row end")*/
-            const rgbRow = values[Math.floor(row / STEP)].flatMap(color => DecToRGB(color.toNumber()));
+
+            console.log(values[Math.floor(row / STEP)])
+            const rgbRow = values[Math.floor(row / STEP)].flatMap(color => DecToRGB(color));
             if (rgbRow.length !== 3000) {
                 throw Error("Invalid length of row returned.")
             }
