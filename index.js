@@ -28,11 +28,7 @@ const arrayBuffer = new ArrayBuffer(N); // 3 MB
 const arrayView = new Uint8Array(arrayBuffer);
 
 for (let i = 0; i < N; i++) {
-    arrayView[i] = 0;
-}
-
-const getOffset = (x, y) => {
-    return y * 1000 + x
+    arrayView[i] = 255;
 }
 
 const DecToRGB = (dec) => {
@@ -50,7 +46,6 @@ const contract = new ethers.Contract(contractAddress, contractABI, mumbaiProvide
 
 
 contract.on("ColorChange", (_, pixelIds, pixelColors) => {
-    const C = Number(newCode);
     const ids = pixelIds.map(id=>id.toNumber())
     const colors = pixelColors.map(color => DecToRGB(color))
     for(let i=0;i<ids.length;i++){
@@ -113,7 +108,6 @@ setInterval(function () {
             console.log(values[Math.floor(col / STEP)])
             console.log("row end")*/
 
-            console.log(values[Math.floor(row / STEP)])
             const rgbRow = values[Math.floor(row / STEP)].flatMap(color => DecToRGB(color));
             if (rgbRow.length !== 3000) {
                 throw Error("Invalid length of row returned.")
@@ -125,6 +119,7 @@ setInterval(function () {
                 arrayView[s+j] = rgbRow[j]
             }
         }
+        console.log(arrayView)
         io.emit('canvas', arrayView);
 
         startIndex = (startIndex + 1) % STEP
