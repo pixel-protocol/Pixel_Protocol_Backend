@@ -1,4 +1,4 @@
-exports.contractAddress = "0x5AE974b4DC19200461Afc64BC23f9816472EB4c8"
+exports.contractAddress = "0x92a5EC81F857fA8C3cF9391325344136770d4cb7"
 exports.contractABI = [
   {
     "inputs": [],
