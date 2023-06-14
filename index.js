@@ -6,8 +6,8 @@ require('dotenv').config()
 
 const { contractABI, contractAddress } = require('./constants/contract')
 
-const hostname = 'localhost';
-const port = 8000;
+const hostname = (process.env.ENVIRONMENT==='Dev') ? 'localhost' : '0.0.0.0';
+const port = (process.env.ENVIRONMENT==='Dev') ? 8000 :  80;
 
 const server = http.createServer((req, res) => {
     res.statusCode = 200;
@@ -17,7 +17,7 @@ const { Server } = require("socket.io");
 const io = new Server(server, {
     maxHttpBufferSize: 1e8,
     cors: {
-        origin: "http://localhost:3000",
+        origin: (process.env.ENVIRONMENT==='Dev') ? "http://localhost:3000" : "*",
         methods: ["GET", "POST"]
     }
 });
@@ -46,6 +46,7 @@ const contract = new ethers.Contract(contractAddress, contractABI, mumbaiProvide
 
 
 contract.on("ColorChange", (_, pixelIds, pixelColors) => {
+    console.log(pixelIds)
     const ids = pixelIds.map(id=>id.toNumber())
     const colors = pixelColors.map(color => DecToRGB(color))
     for(let i=0;i<ids.length;i++){
